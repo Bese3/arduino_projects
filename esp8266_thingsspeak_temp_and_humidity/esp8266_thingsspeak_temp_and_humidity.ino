@@ -1,3 +1,5 @@
+#include <MQ135.h>
+
 #include <SoftwareSerial.h>
 #include <DHT.h>
 
@@ -18,6 +20,10 @@ String myFIELD2 = "field2";
 
 int valSensor = 1;
 int tempsensor = 2;
+int vibsensor = 3;
+int MQsensor = A0;
+int watersensor = A1;
+MQ135 gas_state = MQ135(MQsensor);
 
 DHT dht(tempsensor , DHTTYPE);
 
@@ -31,6 +37,8 @@ void setup() {
   espData("AT+CWMODE=1", 1000, DEBUG);                 //Set the ESP mode as station mode
   espData("AT+CWJAP=\"" + mySSID + "\",\"" + myPWD + "\"", 1000, DEBUG);   //Connect to WiFi network
 
+
+  pinMode(vibsensor , INPUT);
   pinMode(tempsensor , INPUT);
   pinMode(red , OUTPUT);
   pinMode(green , OUTPUT);
@@ -39,6 +47,7 @@ void setup() {
 }
 
 void loop() {
+  normal();
   String getData = "GET /update?api_key=" + myAPI + "&" + myFIELD + "=" + getTemperatureValue() + "&" + myFIELD2 + "=" + getHumidityValue();
 
   espData("AT+CIPMUX=1", 1000, DEBUG);       //Allow multiple connections
@@ -54,6 +63,12 @@ String getTemperatureValue() {
   Serial.print("Temperature(C) = ");
   int temp = tempc;
   Serial.println(temp);
+  Serial.print("\n");
+  if (temp > 35)
+       danger();
+    else
+    normal();
+  
   delay(50);
   return String(temp);
 }
@@ -63,8 +78,66 @@ String getHumidityValue() {
   Serial.print("Humidity in % = ");
   int humidity = humid;
   Serial.println(humidity);
+  Serial.print("\n");
   delay(50);
   return String(humidity);
+}
+String getVibrationValue(){
+
+int vibration = analogRead(vibsensor);
+float mapper = map(vibration , 0 , 213 , 0 , 1);
+
+  if (map == 1)
+          danger();
+  else
+      normal();
+    mapper = 100*mapper;
+    Serial.print("percent of vibration:");
+    Serial.print(mapper);
+    Serial.print("\n");
+    delay(50);
+
+    return String(vibration);
+}
+String getMqgasValue(){
+  int ppm = gas_state.getPPM();
+  Serial.print("Rate:");
+  Serial.println(ppm);
+  Serial.print("PPM\n");
+  if (ppm > 800)
+        danger();
+  else 
+      normal();
+        delay(50);
+    return String(ppm);
+
+}
+String getwaterValue(){
+
+int water = analogRead(watersensor);
+float mapper = map(water , 0 , 213 , 0 , 1);
+if (map == 1)
+  danger();
+  else
+  normal();
+  mapper = 100*mapper;
+  Serial.print("Percentage Conductivity of Water:");
+  Serial.print(mapper);
+  Serial.print("\n");
+  delay(50);
+
+  return String(water); 
+}
+void danger(){
+
+  digitalWrite(red , HIGH);
+  digitalWrite(green , LOW);
+  digitalWrite(buzzer , HIGH);
+}
+void normal(){
+  digitalWrite(green , LOW);
+  digitalWrite(red , LOW);
+  digitalWrite(buzzer , HIGH);
 }
 
 String espData(String command, const int timeout, boolean debug) {

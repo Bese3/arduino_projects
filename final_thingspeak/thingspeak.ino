@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
-#include<DHT.h>       //Software Serial library
-SoftwareSerial espSerial(10, 11);   //Pin 2 and 3 act as RX and TX. Connect them to TX and RX of ESP8266      
+#include<DHT.h>       
+SoftwareSerial espSerial(10, 11);      
 #define DEBUG true
 #define red  7
 #define green 6
